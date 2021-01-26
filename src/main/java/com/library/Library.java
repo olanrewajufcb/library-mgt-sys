@@ -11,6 +11,7 @@ public class Library {
     private final HashMap<Borrower, ArrayList<Book>> borrowersCollection = new HashMap<>();
     //Potential borrowers list with order of priority
     private final PriorityQueue<Borrower> request = new PriorityQueue<>();
+    private final PriorityQueue<Book> bookWithPriority = new PriorityQueue<>();
   
     Queue<Borrower> queue = new LinkedList<>(); //List of potential borrowers of books without priority
     
@@ -28,17 +29,21 @@ public class Library {
         availableCopies.put(book, availableCopies.getOrDefault(book, 0) + copies);
         System.out.println(copies + " books of " + book.getName() + " published by " + book.getAuthor() + " have been added to library book collections," +
                 " available copies: " + availableCopies.get(book));
+        
         return book.getAuthor();
     }
     
     /**
-     *  Request is made to borrow book, check if eligible before adding to list
+     *  Request is made to borrow book, check if eligible before adding to li
      * @param borrower
      * @return
      */
     public boolean makeRequest(Borrower borrower){
-        return addToList(borrower, "makeRequest");
+        
+        return addToPriorityQueue(borrower, "makeRequest");
     }
+    
+   
     
     
     /**
@@ -47,7 +52,7 @@ public class Library {
      * @param typeOfOperation
      * @return
      */
-    private boolean addToList(Borrower borrower, String typeOfOperation){
+    private boolean addToPriorityQueue(Borrower borrower, String typeOfOperation){
         if(!(borrowersCollection.containsKey(borrower)) || borrowersCollection.get(borrower).size() < 3){
             if (typeOfOperation.equals("makeRequest")) {
                 request.add(borrower);
@@ -67,16 +72,6 @@ public class Library {
             queue.remove(borrower);
         }
         return false;
-    }
-    
-    
-    /**
-     * If there is no one in priority queue, no books will be given out
-     * @param book
-     * @return
-     */
-    public Borrower borrowBook(Book book){
-        return selectFromList(book, "borrowBook");
     }
     
     
@@ -112,19 +107,31 @@ public class Library {
             return 0;
         }
         int taken = noOfCopies.get(book) - availableCopies.get(book);
-        System.out.println((taken == 0 ? "0" : taken)  +" \"" + book.getName() + "\" " + (taken < 2 ? "book has been " : "books have been ") + "taken from the library\n" +
+        System.out.println((taken == 0 ? "0" : taken)
+                + book.getName() + (taken < 2 ? "book has been " : "books have been ") + "taken from the library\n" +
                 "total \"" +  book.getName() +  "\" books available: " + availableCopies.get(book));
         return taken;
     }
 
     public boolean addToQueue(Borrower borrower){
-        return addToList(borrower, "addToQueue");
+        
+        return addToPriorityQueue(borrower, "addToQueue");
     }
 
     public Borrower selectFromQueue(Book book){
+        
         return selectFromList(book, "selectFromQueue");
     }
-
+    
+    /**
+     * If there is no one in priority queue, no books will be given out
+     * @param book
+     * @return
+     */
+    public Borrower borrowBook(Book book){
+        
+        return selectFromList(book, "borrowBook");
+    }
    
     private Borrower selectFromList(Book book, String typeOfOperation){
         //If there is no one in list, no books will be given out
@@ -143,10 +150,10 @@ public class Library {
             System.out.println("\"" + book.getName() + "\" is not yet part of this library's collection.");
             return null;
         }
-        int copiesRemaining = availableCopies.get(book);
+        int remainingCopies = availableCopies.get(book);
 
         //If book required from the library is currently available, then it can be given out to the first person
-        if(copiesRemaining > 0){
+        if(remainingCopies > 0){
             person = typeOfOperation.equals("borrowBook") ? request.poll() : queue.poll();
 
             //If the first person has borrowed a similar copy, deny the request
@@ -160,7 +167,7 @@ public class Library {
                 }
                 return person;
             }
-            availableCopies.put(book, copiesRemaining - 1);
+            availableCopies.put(book, remainingCopies - 1);
             if (typeOfOperation.equals("borrowBook")) {
                 request.remove(person);
             } else {
